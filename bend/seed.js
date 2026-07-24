@@ -1,22 +1,31 @@
 const db = require('./database');
 
-const sampleTasks = [
-  { title: 'Design Dashboard UI', description: 'Create responsive mockup in Figma', status: 'Completed', priority: 'High' },
-  { title: 'Setup SQLite Backend', description: 'Build REST endpoints with Express', status: 'In Progress', priority: 'High' },
-  { title: 'Connect React Frontend', description: 'Fetch API and handle state management', status: 'In Progress', priority: 'Medium' },
-  { title: 'Write Documentation', description: 'Document API routes and setup guide', status: 'Pending', priority: 'Low' },
-];
+db.serialize(() => {
+  db.run('DELETE FROM invoices');
+  db.run('DELETE FROM subscriptions');
+  db.run('DELETE FROM users');
 
-// Clear existing tasks and insert sample data
-db.run('DELETE FROM tasks', (err) => {
-  if (err) return console.error(err.message);
+  // Insert Users
+  const stmtUser = db.prepare('INSERT INTO users (id, name, email, role) VALUES (?, ?, ?, ?)');
+  stmtUser.run(1, 'Alice Admin', 'admin@saas.com', 'admin');
+  stmtUser.run(2, 'Bob Manager', 'manager@saas.com', 'billing_manager');
+  stmtUser.run(3, 'Charlie Member', 'member@saas.com', 'member');
+  stmtUser.finalize();
 
-  const stmt = db.prepare('INSERT INTO tasks (title, description, status, priority) VALUES (?, ?, ?, ?)');
-  
-  sampleTasks.forEach((t) => {
-    stmt.run(t.title, t.description, t.status, t.priority);
-  });
-  
-  stmt.finalize();
-  console.log('Database seeded successfully!');
+  // Insert Subscriptions
+  const stmtSub = db.prepare('INSERT INTO subscriptions (user_id, plan_name, price, status) VALUES (?, ?, ?, ?)');
+  stmtSub.run(1, 'Enterprise Pro', 299.00, 'active');
+  stmtSub.run(2, 'Team Growth', 99.00, 'active');
+  stmtSub.run(3, 'Starter Plan', 29.00, 'active');
+  stmtSub.finalize();
+
+  // Insert Invoices
+  const stmtInv = db.prepare('INSERT INTO invoices (user_id, amount, status) VALUES (?, ?, ?)');
+  stmtInv.run(1, 299.00, 'paid');
+  stmtInv.run(2, 99.00, 'pending');
+  stmtInv.run(2, 99.00, 'pending');
+  stmtInv.run(3, 29.00, 'paid');
+  stmtInv.finalize();
+
+  console.log('✅ Database seeded successfully!');
 });
